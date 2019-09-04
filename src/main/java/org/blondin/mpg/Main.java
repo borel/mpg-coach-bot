@@ -350,22 +350,14 @@ public class Main {
 
     private static List<Player> calculateEfficiency(List<Player> players, MpgStatsClient stats, ChampionshipStatsType championship, Config config,
             boolean failIfPlayerNotFound, boolean logWarnIfPlayerNotFound) {
-        int daysPeriod = getCurrentDay(stats, championship);
-        int days4efficiency = 0;
-        if (config.isEfficiencyRecentFocus()) {
-            days4efficiency = config.getEfficiencyRecentDays();
-            // If season start (=> daysPeriod < 8 when days4efficiency = 8 by default), the focus is on the started days
-            if (daysPeriod < days4efficiency) {
-                days4efficiency = daysPeriod;
-            } else {
-                daysPeriod = days4efficiency;
-            }
+        // Calculate efficiency for given championship or all (in champions league case)
+        List<ChampionshipStatsType> list = Arrays.asList(championship);
+        if (ChampionshipStatsType.CHAMPIONS_LEAGUE.equals(championship)) {
+            list = Arrays.asList(ChampionshipStatsType.LIGUE_1, ChampionshipStatsType.LIGUE_2, ChampionshipStatsType.PREMIER_LEAGUE,
+                    ChampionshipStatsType.LIGA, ChampionshipStatsType.SERIE_A);
         }
-        for (org.blondin.mpg.stats.model.Player p : stats.getStats(championship).getPlayers()) {
-            double efficiency = p.getStats().getMatchs(days4efficiency) / (double) daysPeriod * p.getStats().getAverage(days4efficiency)
-                    * (1 + p.getStats().getGoals(days4efficiency) * config.getEfficiencyCoefficient(PositionWrapper.fromStats(p.getPosition())));
-            // round efficiency to 2 decimals
-            p.setEfficiency(efficiency);
+        for (ChampionshipStatsType type : list) {
+            calculateEfficiencyForChampionship(stats, type, config);
         }
 
         // Fill MPG model
@@ -383,6 +375,26 @@ public class Main {
             }
         }
         return players;
+    }
+
+    private static void calculateEfficiencyForChampionship(MpgStatsClient stats, ChampionshipStatsType championship, Config config) {
+        int daysPeriod = getCurrentDay(stats, championship);
+        int days4efficiency = 0;
+        if (config.isEfficiencyRecentFocus()) {
+            days4efficiency = config.getEfficiencyRecentDays();
+            // If season start (=> daysPeriod < 8 when days4efficiency = 8 by default), the focus is on the started days
+            if (daysPeriod < days4efficiency) {
+                days4efficiency = daysPeriod;
+            } else {
+                daysPeriod = days4efficiency;
+            }
+        }
+        for (org.blondin.mpg.stats.model.Player p : stats.getStats(championship).getPlayers()) {
+            double efficiency = p.getStats().getMatchs(days4efficiency) / (double) daysPeriod * p.getStats().getAverage(days4efficiency)
+                    * (1 + p.getStats().getGoals(days4efficiency) * config.getEfficiencyCoefficient(PositionWrapper.fromStats(p.getPosition())));
+            // round efficiency to 2 decimals
+            p.setEfficiency(efficiency);
+        }
     }
 
     private static int getCurrentDay(MpgStatsClient stats, ChampionshipStatsType championship) {

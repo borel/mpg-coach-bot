@@ -77,6 +77,22 @@ public class MainTest extends AbstractMockTestClient {
     }
 
     @Test
+    public void testChampionsLeagueMercato() throws Exception {
+        prepareMainLigue1Mocks("LM5ZG6KK-status-3", "20190904", "20190904", null);
+        stubFor(get("/league/LM5ZG6KK/mercato").withHeader("client-version", equalTo(MpgClient.MPG_CLIENT_VERSION)).atPriority(1)
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpg.mercato.LM5ZG6KK.20190904.json")));
+        stubFor(get("/customteam.json/Ligue-2")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpgstats.ligue-2.20190904.json")));
+        stubFor(get("/customteam.json/Premier-League")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpgstats.premier-league.20190904.json")));
+        stubFor(get("/customteam.json/Liga")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpgstats.liga.20190904.json")));
+        stubFor(get("/customteam.json/Serie-A")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpgstats.serie-a.20190904.json")));
+        executeMainProcess();
+    }
+
+    @Test
     public void testLeaguesInclude2() throws Exception {
         prepareMainLigue1Mocks("LJV92C9Y.LJT3FXDF-status-4", "20190818", "20190818", "20190818");
         stubFor(get("/league/LJV92C9Y/coach")

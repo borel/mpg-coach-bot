@@ -1,0 +1,19 @@
+{
+    "data": {
+        "leagues": [
+            {
+                "id": "LM5ZG6KK",
+                "admin_mpg_user_id": "mpg_user_306874",
+                "current_mpg_user": "mpg_user_306874",
+                "name": "The Cesc Pistols",
+                "url": "assets/public/img/league/1.jpg",
+                "leagueStatus": 3,
+                "championship": 6,
+                "mode": 1,
+                "teamStatus": 0,
+                "players": 4
+            }        ],
+        "follow": [
+        ]
+    }
+}

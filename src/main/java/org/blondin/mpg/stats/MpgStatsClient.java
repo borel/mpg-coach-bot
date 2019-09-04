@@ -31,6 +31,9 @@ public class MpgStatsClient extends AbstractClient {
     }
 
     public synchronized Championship getStats(ChampionshipStatsType type) {
+        if (ChampionshipStatsType.CHAMPIONS_LEAGUE.equals(type)) {
+            throw new UnsupportedOperationException("Champions league has not dedicated statistics, please use each championship statistics");
+        }
         if (!cache.containsKey(type)) {
             // FR : "Ligue-1" / EN : "Premier-League" / ES : "Liga"
             // Call with infinite cache and verify timestamp after
