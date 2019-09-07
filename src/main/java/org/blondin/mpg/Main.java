@@ -370,7 +370,7 @@ public class Main {
                 if (failIfPlayerNotFound) {
                     throw e;
                 }
-                if (logWarnIfPlayerNotFound) {
+                if (logWarnIfPlayerNotFound && !ChampionshipType.CHAMPIONS_LEAGUE.equals(championship)) {
                     LOG.warn("WARN: Player can't be found in statistics: {}", player.getName());
                 }
                 player.setEfficiency(0);
@@ -394,9 +394,6 @@ public class Main {
         }
         List<ChampionshipType> mercatos = Arrays.asList(ChampionshipType.LIGUE_1, ChampionshipType.LIGUE_2, ChampionshipType.PREMIER_LEAGUE,
                 ChampionshipType.LIGA, ChampionshipType.SERIE_A);
-        if (player.getName().contains("Skriniar")) {
-            System.out.println("TODO : Correct player should be found");
-        }
         for (ChampionshipType m : mercatos) {
             Mercato mercato = mpgClient.getMercato(m);
             for (Player p : mercato.getPlayers()) {
@@ -405,7 +402,7 @@ public class Main {
                 }
             }
         }
-        throw new PlayerNotFoundException(String.format("The player '%s' (id=%s) can not be found", player.getName(), player.getId()));
+        throw new PlayerNotFoundException(String.format("The player '%s' (id=%s) can not be found in mercatos", player.getName(), player.getId()));
     }
 
     private static void calculateEfficiencyForChampionship(MpgStatsClient stats, ChampionshipStatsType championship, Config config) {
