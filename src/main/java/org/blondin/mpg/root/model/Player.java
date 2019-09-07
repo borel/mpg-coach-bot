@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Player {
 
-    @JsonProperty("playerid")
+    @JsonProperty("id")
     private String id;
     @JsonProperty("firstname")
     private String firstName;

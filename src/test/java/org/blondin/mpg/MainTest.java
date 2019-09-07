@@ -89,6 +89,18 @@ public class MainTest extends AbstractMockTestClient {
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpgstats.liga.20190904.json")));
         stubFor(get("/customteam.json/Serie-A")
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpgstats.serie-a.20190904.json")));
+
+        stubFor(get("/mercato/1")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpg.mercato.ligue-1.20190904.json")));
+        stubFor(get("/mercato/2")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpg.mercato.premier-league.20190904.json")));
+        stubFor(get("/mercato/3")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpg.mercato.liga.20190904.json")));
+        stubFor(get("/mercato/4")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpg.mercato.ligue-2.20190904.json")));
+        stubFor(get("/mercato/5")
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("mpg.mercato.serie-a.20190904.json")));
+
         executeMainProcess();
     }
 

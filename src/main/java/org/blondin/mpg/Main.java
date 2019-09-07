@@ -17,10 +17,12 @@ import org.blondin.mpg.out.model.OutType;
 import org.blondin.mpg.root.MpgClient;
 import org.blondin.mpg.root.exception.NoMoreGamesException;
 import org.blondin.mpg.root.exception.PlayerNotFoundException;
+import org.blondin.mpg.root.model.ChampionshipType;
 import org.blondin.mpg.root.model.Coach;
 import org.blondin.mpg.root.model.CoachRequest;
 import org.blondin.mpg.root.model.League;
 import org.blondin.mpg.root.model.LeagueStatus;
+import org.blondin.mpg.root.model.Mercato;
 import org.blondin.mpg.root.model.Mode;
 import org.blondin.mpg.root.model.Player;
 import org.blondin.mpg.root.model.Position;
@@ -105,7 +107,7 @@ public class Main {
             InjuredSuspendedWrapperClient outPlayersClient, Config config) {
         LOG.info("\nProposal for your mercato:\n");
         List<Player> players = mpgClient.getMercato(league.getId()).getPlayers();
-        calculateEfficiency(players, mpgStatsClient, ChampionshipTypeWrapper.toStats(league.getChampionship()), config, false, true);
+        calculateEfficiency(players, mpgClient, mpgStatsClient, league.getChampionship(), config, false, true);
         processMercato(players, outPlayersClient, ChampionshipTypeWrapper.toOut(league.getChampionship()));
     }
 
@@ -113,7 +115,7 @@ public class Main {
             InjuredSuspendedWrapperClient outPlayersClient, Config config) {
         LOG.info("\nProposal for your coming soon mercato:\n");
         List<Player> players = mpgClient.getMercato(league.getChampionship()).getPlayers();
-        calculateEfficiency(players, mpgStatsClient, ChampionshipTypeWrapper.toStats(league.getChampionship()), config, false, true);
+        calculateEfficiency(players, mpgClient, mpgStatsClient, league.getChampionship(), config, false, true);
         processMercato(players, outPlayersClient, ChampionshipTypeWrapper.toOut(league.getChampionship()));
     }
 
@@ -158,7 +160,7 @@ public class Main {
             completePlayersTeams(players, coach.getTeams());
 
             // Calculate efficiency (notes should be in injured players display), and save for transactions proposal
-            calculateEfficiency(players, mpgStatsClient, ChampionshipTypeWrapper.toStats(league.getChampionship()), config, false, true);
+            calculateEfficiency(players, mpgClient, mpgStatsClient, league.getChampionship(), config, false, true);
             List<Player> playersTeam = players.stream().collect(Collectors.toList());
 
             // Remove out players (and write them)
@@ -185,8 +187,7 @@ public class Main {
                     TransferBuy transferBuy = mpgClient.getTransferBuy(league.getId());
                     List<Player> playersAvailable = transferBuy.getAvailablePlayers();
                     removeOutPlayers(playersAvailable, outPlayersClient, ChampionshipTypeWrapper.toOut(league.getChampionship()), false);
-                    calculateEfficiency(playersAvailable, mpgStatsClient, ChampionshipTypeWrapper.toStats(league.getChampionship()), config, false,
-                            false);
+                    calculateEfficiency(playersAvailable, mpgClient, mpgStatsClient, league.getChampionship(), config, false, false);
                     writeTransactionsProposal(playersTeam, playersAvailable, transferBuy.getBudget(), outPlayersClient,
                             ChampionshipTypeWrapper.toOut(league.getChampionship()), config);
                 }
@@ -348,11 +349,11 @@ public class Main {
         LOG.info(render);
     }
 
-    private static List<Player> calculateEfficiency(List<Player> players, MpgStatsClient stats, ChampionshipStatsType championship, Config config,
-            boolean failIfPlayerNotFound, boolean logWarnIfPlayerNotFound) {
+    private static List<Player> calculateEfficiency(List<Player> players, MpgClient mpg, MpgStatsClient stats, ChampionshipType championship,
+            Config config, boolean failIfPlayerNotFound, boolean logWarnIfPlayerNotFound) {
         // Calculate efficiency for given championship or all (in champions league case)
-        List<ChampionshipStatsType> list = Arrays.asList(championship);
-        if (ChampionshipStatsType.CHAMPIONS_LEAGUE.equals(championship)) {
+        List<ChampionshipStatsType> list = Arrays.asList(ChampionshipTypeWrapper.toStats(championship));
+        if (ChampionshipType.CHAMPIONS_LEAGUE.equals(championship)) {
             list = Arrays.asList(ChampionshipStatsType.LIGUE_1, ChampionshipStatsType.LIGUE_2, ChampionshipStatsType.PREMIER_LEAGUE,
                     ChampionshipStatsType.LIGA, ChampionshipStatsType.SERIE_A);
         }
@@ -363,7 +364,8 @@ public class Main {
         // Fill MPG model
         for (Player player : players) {
             try {
-                player.setEfficiency(stats.getStats(championship).getPlayer(player.getName()).getEfficiency());
+                player.setEfficiency(
+                        stats.getStats(getPlayerChampionshipType(mpg, player, championship)).getPlayer(player.getName()).getEfficiency());
             } catch (PlayerNotFoundException e) {
                 if (failIfPlayerNotFound) {
                     throw e;
@@ -375,6 +377,35 @@ public class Main {
             }
         }
         return players;
+    }
+
+    /**
+     * Return given championship (stats type) if not null and different from {@link ChampionshipType#CHAMPIONS_LEAGUE}, the real player championship
+     * otherwise
+     * 
+     * @param mpgClient MPG client
+     * @param player    The MPG player
+     * @param type      championship type
+     * @return The given or real player championship
+     */
+    private static ChampionshipStatsType getPlayerChampionshipType(MpgClient mpgClient, Player player, ChampionshipType championship) {
+        if (championship != null && !ChampionshipType.CHAMPIONS_LEAGUE.equals(championship)) {
+            return ChampionshipTypeWrapper.toStats(championship);
+        }
+        List<ChampionshipType> mercatos = Arrays.asList(ChampionshipType.LIGUE_1, ChampionshipType.LIGUE_2, ChampionshipType.PREMIER_LEAGUE,
+                ChampionshipType.LIGA, ChampionshipType.SERIE_A);
+        if (player.getName().contains("Skriniar")) {
+            System.out.println("TODO : Correct player should be found");
+        }
+        for (ChampionshipType m : mercatos) {
+            Mercato mercato = mpgClient.getMercato(m);
+            for (Player p : mercato.getPlayers()) {
+                if (player.getId().equals(p.getId())) {
+                    return ChampionshipTypeWrapper.toStats(m);
+                }
+            }
+        }
+        throw new PlayerNotFoundException(String.format("The player '%s' (id=%s) can not be found", player.getName(), player.getId()));
     }
 
     private static void calculateEfficiencyForChampionship(MpgStatsClient stats, ChampionshipStatsType championship, Config config) {
